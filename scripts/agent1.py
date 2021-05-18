@@ -7,7 +7,7 @@ class agent1(object):
     def __init__(self):
         self.M = ['funkcija1', 'funkcija2']
         self.gamma = [0.1, -0.1]
-        self.pub = rospy.Publisher("/varijabla_funkciji", poruka, queue_size = 5, latch=True)
+        self.pub = rospy.Publisher("/varijabla_funkciji", poruka, queue_size = 3, latch=True)
         self.sub = rospy.Subscriber("/varijabla1/funkcija_varijabli", poruka, self.callback)
         self.Rs = {'funkcija1': [0, 0], 'funkcija2': [0, 0]}
         rospy.spin()

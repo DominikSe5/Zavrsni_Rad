@@ -36,18 +36,19 @@ class main_hub(object):
 
         self.pubs = {}
         for varijabla in self.received:
-            self.pubs[varijabla] = rospy.Publisher('/{}/funkcija_varijabli'.format(varijabla), poruka, queue_size=5, latch=True)
+            self.pubs[varijabla] = rospy.Publisher('/{}/funkcija_varijabli'.format(varijabla), poruka, queue_size=7, latch=True)
 
-        rospy.sleep(3)
+        rospy.sleep(4)
         
         while not rospy.is_shutdown():
-            rospy.sleep(5)
+            rospy.sleep(2)
             print(self.received)
             check = []
             for varijabla in self.received:
                 if set(self.M[varijabla]) <= set(self.received[varijabla]):
                     check.append(True)
-            if all(check) and len(check) != 0:
+            print(check)
+            if all(check) and len(check) == 3:
                 for funkcija in self.gamma:
                     varijable_kojima_saljemo = self.N[funkcija]
                     for varijabla in varijable_kojima_saljemo:
@@ -129,7 +130,8 @@ class main_hub(object):
     
     def callback(self, data): 
         self.Qs['{}, {}'.format(data.posiljatelj, data.primatelj)] = data.data
-        self.received[data.posiljatelj].append(data.primatelj)
+        if data.primatelj not in self.received[data.posiljatelj]:
+            self.received[data.posiljatelj].append(data.primatelj)
 
 if __name__ == "__main__":
     rospy.init_node("Main_Hub")

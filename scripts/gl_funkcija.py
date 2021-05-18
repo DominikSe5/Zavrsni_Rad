@@ -36,7 +36,7 @@ class main_hub(object):
 
         self.pubs = {}
         for varijabla in self.received:
-            self.pubs[varijabla] = rospy.Publisher('/{}/funkcija_varijabli'.format(varijabla), poruka, queue_size=7, latch=True)
+            self.pubs[varijabla] = rospy.Publisher('/{}/funkcija_varijabli'.format(varijabla), poruka, queue_size=8, latch=True)
 
         rospy.sleep(4)
         

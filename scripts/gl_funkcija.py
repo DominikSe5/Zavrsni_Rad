@@ -41,7 +41,7 @@ class main_hub(object):
         rospy.sleep(3)
         
         while not rospy.is_shutdown():
-            rospy.sleep(1)
+            rospy.sleep(5)
             print(self.received)
             check = []
             for varijabla in self.received:

@@ -56,8 +56,8 @@ class main_hub(object):
                         msg.primatelj = varijabla                       
                         msg.posiljatelj = funkcija
                         msg.data = self.Poruka_f_v(varijabla, funkcija)
-                        self.pubs[varijabla].publish(msg)
                         self.received[varijabla].clear()
+                        self.pubs[varijabla].publish(msg)
 
     def calc_U(self, f):
         xor_sum = []
@@ -128,7 +128,7 @@ class main_hub(object):
         output[1] += max(U_1)  
         return output
     
-    def callback(self, data): 
+    def callback(self, data):
         self.Qs['{}, {}'.format(data.posiljatelj, data.primatelj)] = data.data
         if data.primatelj not in self.received[data.posiljatelj]:
             self.received[data.posiljatelj].append(data.primatelj)

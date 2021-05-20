@@ -14,7 +14,6 @@ class agent3(object):
         rospy.spin()
 
     def callback(self, data):
-        print("Agent3 je primio poruku")
         self.Rs[data.posiljatelj] = data.data
         if data.posiljatelj not in self.ready_check:
             self.ready_check.append(data.posiljatelj)
@@ -25,6 +24,8 @@ class agent3(object):
                 poruka_funkciji.primatelj = funkcija_kojim_saljemo
                 poruka_funkciji.data = self.Poruka_v_f(funkcija_kojim_saljemo)
                 self.pub.publish(poruka_funkciji)
+                Z = self.calc_Z()
+            print("Z od agenta3 =", Z)
 
     def Poruka_v_f(self, f):
         if f in self.M:
@@ -34,6 +35,13 @@ class agent3(object):
                     out[0] += vrijednost[0]
                     out[1] += vrijednost[1]
         return out
+
+    def calc_Z(self):
+        sum = [0, 0]
+        for func in self.Rs:
+            sum[0] += self.Rs[func][0]
+            sum[1] += self.Rs[func][1]
+        return sum
 
 if __name__ == "__main__":
     rospy.init_node("agent3")

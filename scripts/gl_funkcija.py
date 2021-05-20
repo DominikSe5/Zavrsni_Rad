@@ -31,7 +31,7 @@ class main_hub(object):
             'varijabla2' : ['funkcija1', 'funkcija2', 'funkcija3'],
             'varijabla3' : ['funkcija2', 'funkcija3']
             }
-
+        
         sub = rospy.Subscriber('/varijabla_funkciji', poruka, self.callback)
 
         self.pubs = {}
@@ -41,6 +41,9 @@ class main_hub(object):
         rospy.sleep(4)
         
         while not rospy.is_shutdown():
+            n = 0
+            alpha_tmp = [0, 0]
+            self.alpha = [0, 0]
             rospy.sleep(2)
             print(self.received)
             check = []
@@ -49,6 +52,12 @@ class main_hub(object):
                     check.append(True)
             print(check)
             if all(check) and len(check) == 3:
+                for var_func in self.Qs:
+                    n += 1
+                    alpha_tmp[0] += self.Qs[var_func][0]
+                    alpha_tmp[1] += self.Qs[var_func][1]
+                self.alpha[0] = -alpha_tmp[0] / n
+                self.alpha[1] = -alpha_tmp[1] / n
                 for funkcija in self.gamma:
                     varijable_kojima_saljemo = self.N[funkcija]
                     for varijabla in varijable_kojima_saljemo:
@@ -58,7 +67,7 @@ class main_hub(object):
                         msg.data = self.Poruka_f_v(varijabla, funkcija)
                         self.received[varijabla].clear()
                         self.pubs[varijabla].publish(msg)
-
+            
     def calc_U(self, f):
         xor_sum = []
         U = []
@@ -99,10 +108,10 @@ class main_hub(object):
         else: return 0
     
     def Poruka_f_v(self, v, f):
-        # sum_Qs = {}
-        # for i in self.N[f]:
-        #     if i != v:
-        #         sum_Qs[i] = self.Qs['{}, {}'.format(i, f)]
+        sum_Qs = {}
+        for varijabla in self.N[f]:
+            if varijabla != v:
+                sum_Qs[varijabla] = self.Qs['{}, {}'.format(varijabla, f)]
         U_0 = []
         U_1 = []
         i1 = 0
@@ -114,11 +123,11 @@ class main_hub(object):
             while len(temp) != len(N): ## --
                 if temp[0] == 0: ## --
                     del temp[0] ## --
-            # for i2 in sum_Qs:
-            #     if temp[N.index(i2)] == 0:
-            #         U[i1] += sum_Qs[i2][0]
-            #     else:
-            #         U[i1] += sum_Qs[i2][1]
+            for varijabla in sum_Qs:
+                if temp[N.index(varijabla)] == 0:
+                    U[i1] += sum_Qs[varijabla][0] + self.alpha[0]
+                else:
+                    U[i1] += sum_Qs[varijabla][1] + self.alpha[1]
             if temp[N.index(v)] == 0: ## razvrstavanje vrijednosti funkcije U na dvije liste, u jednu idu vrijednosti za koje varijabla kojoj saljem poruku ima vrijednost 0, a u drugu za vrijednosti 1
                 U_0.append(U[i1])
             elif temp[N.index(v)] == 1:
@@ -127,7 +136,7 @@ class main_hub(object):
         output[0] += max(U_0)   
         output[1] += max(U_1)  
         return output
-    
+
     def callback(self, data):
         self.Qs['{}, {}'.format(data.posiljatelj, data.primatelj)] = data.data
         if data.primatelj not in self.received[data.posiljatelj]:

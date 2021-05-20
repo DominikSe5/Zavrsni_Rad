@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import rospy
+import copy
 from task_allocation.msg import poruka
 
 class main_hub(object):
@@ -53,7 +54,7 @@ class main_hub(object):
                     check.append(True)
             print(check)
             if all(check) and len(check) == 3:
-                Qs_za_racunanje = self.Qs           
+                Qs_za_racunanje = copy.deepcopy(self.Qs)  
                 for var_func in Qs_za_racunanje:
                     n += 1
                     alpha_tmp[0] += Qs_za_racunanje[var_func][0]
@@ -66,7 +67,6 @@ class main_hub(object):
                         msg = poruka()
                         msg.primatelj = varijabla                       
                         msg.posiljatelj = funkcija
-                        print(Qs_za_racunanje)
                         msg.data = self.Poruka_f_v(varijabla, funkcija, Qs_za_racunanje)
                         self.received[varijabla].clear()
                         self.pubs[varijabla].publish(msg)
@@ -135,7 +135,10 @@ class main_hub(object):
                 U_0.append(U[i1])
             elif temp[N.index(v)] == 1:
                 U_1.append(U[i1])   
-            i1 = i1 + 1  
+            i1 = i1 + 1
+        print("R {} -> {}".format(f, v))
+        print("alpha = ",self.alpha)
+        print("U = {}\n".format(U))
         output[0] += max(U_0)   
         output[1] += max(U_1)  
         return output

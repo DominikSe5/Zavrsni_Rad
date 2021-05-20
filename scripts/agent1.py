@@ -25,8 +25,7 @@ class agent1(object):
                 poruka_funkciji.data = self.Poruka_v_f(funkcija_kojim_saljemo)
                 self.pub.publish(poruka_funkciji)
                 Z = self.calc_Z()
-            print("Z od agenta1 =", Z)
-
+            print("\nR-ovi agenta1 =",self.Rs)
     def Poruka_v_f(self, f):
         if f in self.M:
             out = [0, 0]

@@ -40,22 +40,24 @@ class main_hub(object):
 
         rospy.sleep(4)
         
+        Qs_za_racunanje = {}
+
         while not rospy.is_shutdown():
+            rospy.sleep(1)
             n = 0
             alpha_tmp = [0, 0]
             self.alpha = [0, 0]
-            rospy.sleep(2)
-            print(self.received)
             check = []
             for varijabla in self.received:
                 if set(self.M[varijabla]) <= set(self.received[varijabla]):
                     check.append(True)
             print(check)
             if all(check) and len(check) == 3:
-                for var_func in self.Qs:
+                Qs_za_racunanje = self.Qs           
+                for var_func in Qs_za_racunanje:
                     n += 1
-                    alpha_tmp[0] += self.Qs[var_func][0]
-                    alpha_tmp[1] += self.Qs[var_func][1]
+                    alpha_tmp[0] += Qs_za_racunanje[var_func][0]
+                    alpha_tmp[1] += Qs_za_racunanje[var_func][1]
                 self.alpha[0] = -alpha_tmp[0] / n
                 self.alpha[1] = -alpha_tmp[1] / n
                 for funkcija in self.gamma:
@@ -64,7 +66,8 @@ class main_hub(object):
                         msg = poruka()
                         msg.primatelj = varijabla                       
                         msg.posiljatelj = funkcija
-                        msg.data = self.Poruka_f_v(varijabla, funkcija)
+                        print(Qs_za_racunanje)
+                        msg.data = self.Poruka_f_v(varijabla, funkcija, Qs_za_racunanje)
                         self.received[varijabla].clear()
                         self.pubs[varijabla].publish(msg)
             
@@ -107,11 +110,11 @@ class main_hub(object):
         if x == y: return 1
         else: return 0
     
-    def Poruka_f_v(self, v, f):
+    def Poruka_f_v(self, v, f, qs):
         sum_Qs = {}
         for varijabla in self.N[f]:
             if varijabla != v:
-                sum_Qs[varijabla] = self.Qs['{}, {}'.format(varijabla, f)]
+                sum_Qs[varijabla] = qs['{}, {}'.format(varijabla, f)]
         U_0 = []
         U_1 = []
         i1 = 0

@@ -42,12 +42,18 @@ class main_hub(object):
         rospy.sleep(4)
         
         Qs_za_racunanje = {}
+        cycle = 0
+        Rs = {'funkcija1, varijabla1': [], 'funkcija1, varijabla2': [],
+            'funkcija2, varijabla1': [], 'funkcija2, varijabla2': [], 'funkcija2, varijabla3': [],
+            'funkcija3, varijabla2': [], 'funkcija3, varijabla3': [],}
 
         while not rospy.is_shutdown():
+            print(cycle)
+            cycle += 1
             rospy.sleep(1)
             n = 0
             alpha_tmp = {}
-            self.alpha = {}
+            alpha = {}
             check = []
             for varijabla in self.received:
                 if set(self.M[varijabla]) <= set(self.received[varijabla]):
@@ -58,6 +64,7 @@ class main_hub(object):
                 for i in Qs_za_racunanje: ## pretvaranje iz tuple u listu
                     temp = list(Qs_za_racunanje[i])
                     Qs_za_racunanje[i] = temp
+                print('Qs=', Qs_za_racunanje)
                 for var_func in Qs_za_racunanje:
                     for funkcije in self.N:
                         if funkcije in var_func:
@@ -67,21 +74,24 @@ class main_hub(object):
                             else:
                                 alpha_tmp[funkcije][0] += Qs_za_racunanje[var_func][0]
                                 alpha_tmp[funkcije][1] += Qs_za_racunanje[var_func][1]
+                print('\nQs=', Qs_za_racunanje)
                 for funkcije in alpha_tmp:
                     temp_0 = round(- alpha_tmp[funkcije][0] / len(self.N[funkcije]), 2)
                     temp_1 = round(- alpha_tmp[funkcije][1] / len(self.N[funkcije]), 2)
                     temp_list = [temp_0, temp_1]
-                    self.alpha[funkcije] = temp_list
+                    alpha[funkcije] = temp_list
+                print('\nalpha=',alpha)
                 for funkcija in self.gamma:
                     varijable_kojima_saljemo = self.N[funkcija]
                     for varijabla in varijable_kojima_saljemo:
                         msg = poruka()
                         msg.primatelj = varijabla                       
                         msg.posiljatelj = funkcija
-                        msg.data = self.Poruka_f_v(varijabla, funkcija, Qs_za_racunanje)
+                        msg.data = self.Poruka_f_v(varijabla, funkcija, Qs_za_racunanje, alpha)
+                        Rs['{}, {}'.format(funkcija, varijabla)] = [round(num, 2) for num in msg.data]
                         self.received[varijabla].clear()
                         self.pubs[varijabla].publish(msg)
-            
+                print('Rs=',Rs,'\n')
     def calc_U(self, f):
         xor_sum = []
         U = []
@@ -121,8 +131,13 @@ class main_hub(object):
         if x == y: return 1
         else: return 0
     
-    def Poruka_f_v(self, v, f, qs):
+    def Poruka_f_v(self, v, f, qs, alpha):
         sum_Qs = {}
+        for i in qs:
+            temp = [round(num, 2) for num in qs[i]]
+            qs[i] = temp
+        if f == 'funkcija2' and v == 'varijabla2':
+            print('qs=', qs)
         for varijabla in self.N[f]:
             if varijabla != v:
                 sum_Qs[varijabla] = qs['{}, {}'.format(varijabla, f)]
@@ -139,18 +154,18 @@ class main_hub(object):
                     del temp[0] ## --
             for varijabla in sum_Qs:
                 if temp[N.index(varijabla)] == 0:
-                    U[i1] += sum_Qs[varijabla][0] + self.alpha[f][0]
+                    U[i1] += round(sum_Qs[varijabla][0] + alpha[f][0], 2)
                 else:
-                    U[i1] += sum_Qs[varijabla][1] + self.alpha[f][1]
-            print(U)
+                    U[i1] += round(sum_Qs[varijabla][1] + alpha[f][1], 2)
+            #print(U)
             if temp[N.index(v)] == 0: ## razvrstavanje vrijednosti funkcije U na dvije liste, u jednu idu vrijednosti za koje varijabla kojoj saljem poruku ima vrijednost 0, a u drugu za vrijednosti 1
                 U_0.append(U[i1])
             elif temp[N.index(v)] == 1:
                 U_1.append(U[i1])   
             i1 = i1 + 1
-        #print("R {} -> {}".format(f, v))
-        #print("alpha = ",self.alpha)
-        #print("U = {}\n".format(U))
+        # if f == 'funkcija2' or f == 'funkcija3':
+        #     print('R{}_{} = '.format(f, v), U)
+        #     print('sum_qs=',sum_Qs)
         output[0] += max(U_0)   
         output[1] += max(U_1)  
         return output

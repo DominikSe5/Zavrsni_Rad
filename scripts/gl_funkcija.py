@@ -68,8 +68,8 @@ class main_hub(object):
                                 alpha_tmp[funkcije][0] += Qs_za_racunanje[var_func][0]
                                 alpha_tmp[funkcije][1] += Qs_za_racunanje[var_func][1]
                 for funkcije in alpha_tmp:
-                    temp_0 = - alpha_tmp[funkcije][0] / len(self.N[funkcije])
-                    temp_1 = - alpha_tmp[funkcije][1] / len(self.N[funkcije])
+                    temp_0 = round(- alpha_tmp[funkcije][0] / len(self.N[funkcije]), 2)
+                    temp_1 = round(- alpha_tmp[funkcije][1] / len(self.N[funkcije]), 2)
                     temp_list = [temp_0, temp_1]
                     self.alpha[funkcije] = temp_list
                 for funkcija in self.gamma:
@@ -142,6 +142,7 @@ class main_hub(object):
                     U[i1] += sum_Qs[varijabla][0] + self.alpha[f][0]
                 else:
                     U[i1] += sum_Qs[varijabla][1] + self.alpha[f][1]
+            print(U)
             if temp[N.index(v)] == 0: ## razvrstavanje vrijednosti funkcije U na dvije liste, u jednu idu vrijednosti za koje varijabla kojoj saljem poruku ima vrijednost 0, a u drugu za vrijednosti 1
                 U_0.append(U[i1])
             elif temp[N.index(v)] == 1:

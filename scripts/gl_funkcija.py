@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import rospy
 import copy
+import pprint
 from task_allocation.msg import poruka
 
 class main_hub(object):
@@ -63,8 +64,10 @@ class main_hub(object):
                 Qs_za_racunanje = copy.deepcopy(self.Qs)  
                 for i in Qs_za_racunanje: ## pretvaranje iz tuple u listu
                     temp = list(Qs_za_racunanje[i])
-                    Qs_za_racunanje[i] = temp
-                print('Qs=', Qs_za_racunanje)
+                    temp_1 = [round(num, 2) for num in temp] ## round-anje
+                    Qs_za_racunanje[i] = temp_1
+                print('Qs=')
+                pprint.pprint(Qs_za_racunanje)
                 for var_func in Qs_za_racunanje:
                     for funkcije in self.N:
                         if funkcije in var_func:
@@ -74,13 +77,15 @@ class main_hub(object):
                             else:
                                 alpha_tmp[funkcije][0] += Qs_za_racunanje[var_func][0]
                                 alpha_tmp[funkcije][1] += Qs_za_racunanje[var_func][1]
-                print('\nQs=', Qs_za_racunanje)
+                print('Qs=')
+                pprint.pprint(Qs_za_racunanje)
                 for funkcije in alpha_tmp:
                     temp_0 = round(- alpha_tmp[funkcije][0] / len(self.N[funkcije]), 2)
                     temp_1 = round(- alpha_tmp[funkcije][1] / len(self.N[funkcije]), 2)
                     temp_list = [temp_0, temp_1]
                     alpha[funkcije] = temp_list
-                print('\nalpha=',alpha)
+                print('\nalpha=')
+                pprint.pprint(alpha)
                 for funkcija in self.gamma:
                     varijable_kojima_saljemo = self.N[funkcija]
                     for varijabla in varijable_kojima_saljemo:
@@ -91,7 +96,8 @@ class main_hub(object):
                         Rs['{}, {}'.format(funkcija, varijabla)] = [round(num, 2) for num in msg.data]
                         self.received[varijabla].clear()
                         self.pubs[varijabla].publish(msg)
-                print('Rs=',Rs,'\n')
+                print('Rs=')
+                pprint.pprint(Rs)
     def calc_U(self, f):
         xor_sum = []
         U = []
@@ -136,8 +142,6 @@ class main_hub(object):
         for i in qs:
             temp = [round(num, 2) for num in qs[i]]
             qs[i] = temp
-        if f == 'funkcija2' and v == 'varijabla2':
-            print('qs=', qs)
         for varijabla in self.N[f]:
             if varijabla != v:
                 sum_Qs[varijabla] = qs['{}, {}'.format(varijabla, f)]

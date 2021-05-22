@@ -98,6 +98,7 @@ class main_hub(object):
                         self.pubs[varijabla].publish(msg)
                 print('Rs=')
                 pprint.pprint(Rs)
+                print('\n')
     def calc_U(self, f):
         xor_sum = []
         U = []

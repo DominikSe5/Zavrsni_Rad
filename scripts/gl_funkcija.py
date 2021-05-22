@@ -46,8 +46,8 @@ class main_hub(object):
         while not rospy.is_shutdown():
             rospy.sleep(1)
             n = 0
-            alpha_tmp = [0, 0]
-            self.alpha = [0, 0]
+            alpha_tmp = {}
+            self.alpha = {}
             check = []
             for varijabla in self.received:
                 if set(self.M[varijabla]) <= set(self.received[varijabla]):
@@ -55,12 +55,23 @@ class main_hub(object):
             print(check)
             if all(check) and len(check) == 3:
                 Qs_za_racunanje = copy.deepcopy(self.Qs)  
+                for i in Qs_za_racunanje: ## pretvaranje iz tuple u listu
+                    temp = list(Qs_za_racunanje[i])
+                    Qs_za_racunanje[i] = temp
                 for var_func in Qs_za_racunanje:
-                    n += 1
-                    alpha_tmp[0] += Qs_za_racunanje[var_func][0]
-                    alpha_tmp[1] += Qs_za_racunanje[var_func][1]
-                self.alpha[0] = -alpha_tmp[0] / n
-                self.alpha[1] = -alpha_tmp[1] / n
+                    for funkcije in self.N:
+                        if funkcije in var_func:
+                            keys = alpha_tmp.keys()
+                            if not funkcije in keys:
+                                alpha_tmp[funkcije] = Qs_za_racunanje[var_func]
+                            else:
+                                alpha_tmp[funkcije][0] += Qs_za_racunanje[var_func][0]
+                                alpha_tmp[funkcije][1] += Qs_za_racunanje[var_func][1]
+                for funkcije in alpha_tmp:
+                    temp_0 = - alpha_tmp[funkcije][0] / len(self.N[funkcije])
+                    temp_1 = - alpha_tmp[funkcije][1] / len(self.N[funkcije])
+                    temp_list = [temp_0, temp_1]
+                    self.alpha[funkcije] = temp_list
                 for funkcija in self.gamma:
                     varijable_kojima_saljemo = self.N[funkcija]
                     for varijabla in varijable_kojima_saljemo:
@@ -128,17 +139,17 @@ class main_hub(object):
                     del temp[0] ## --
             for varijabla in sum_Qs:
                 if temp[N.index(varijabla)] == 0:
-                    U[i1] += sum_Qs[varijabla][0] + self.alpha[0]
+                    U[i1] += sum_Qs[varijabla][0] + self.alpha[f][0]
                 else:
-                    U[i1] += sum_Qs[varijabla][1] + self.alpha[1]
+                    U[i1] += sum_Qs[varijabla][1] + self.alpha[f][1]
             if temp[N.index(v)] == 0: ## razvrstavanje vrijednosti funkcije U na dvije liste, u jednu idu vrijednosti za koje varijabla kojoj saljem poruku ima vrijednost 0, a u drugu za vrijednosti 1
                 U_0.append(U[i1])
             elif temp[N.index(v)] == 1:
                 U_1.append(U[i1])   
             i1 = i1 + 1
-        print("R {} -> {}".format(f, v))
-        print("alpha = ",self.alpha)
-        print("U = {}\n".format(U))
+        #print("R {} -> {}".format(f, v))
+        #print("alpha = ",self.alpha)
+        #print("U = {}\n".format(U))
         output[0] += max(U_0)   
         output[1] += max(U_1)  
         return output

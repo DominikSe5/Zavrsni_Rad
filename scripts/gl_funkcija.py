@@ -49,7 +49,7 @@ class main_hub(object):
             'funkcija3, varijabla2': [], 'funkcija3, varijabla3': [],}
 
         while not rospy.is_shutdown():
-            print(cycle)
+            print('cycle=',cycle)
             cycle += 1
             rospy.sleep(1)
             n = 0

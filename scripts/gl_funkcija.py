@@ -43,7 +43,7 @@ class main_hub(object):
         rospy.sleep(4)
         
         Qs_za_racunanje = {}
-        cycle = 0
+        cycle = 1
         Rs = {'funkcija1, varijabla1': [], 'funkcija1, varijabla2': [],
             'funkcija2, varijabla1': [], 'funkcija2, varijabla2': [], 'funkcija2, varijabla3': [],
             'funkcija3, varijabla2': [], 'funkcija3, varijabla3': [],}

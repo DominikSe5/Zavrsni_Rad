@@ -64,28 +64,27 @@ class main_hub(object):
                 Qs_za_racunanje = copy.deepcopy(self.Qs)  
                 for i in Qs_za_racunanje: ## pretvaranje iz tuple u listu
                     temp = list(Qs_za_racunanje[i])
-                    temp_1 = [round(num, 2) for num in temp] ## round-anje
+                    temp_1 = [round(num, 5) for num in temp] ## round-anje
                     Qs_za_racunanje[i] = temp_1
-                print('Qs=')
-                pprint.pprint(Qs_za_racunanje)
+                #print('Qs=')
+                #pprint.pprint(Qs_za_racunanje)
                 for var_func in Qs_za_racunanje:
                     for funkcije in self.N:
                         if funkcije in var_func:
                             keys = alpha_tmp.keys()
                             if not funkcije in keys:
-                                alpha_tmp[funkcije] = Qs_za_racunanje[var_func]
+                                alpha_tmp[funkcije] = copy.deepcopy(Qs_za_racunanje[var_func])
                             else:
-                                alpha_tmp[funkcije][0] += Qs_za_racunanje[var_func][0]
-                                alpha_tmp[funkcije][1] += Qs_za_racunanje[var_func][1]
-                print('Qs=')
-                pprint.pprint(Qs_za_racunanje)
+                                alpha_tmp[funkcije][0] += copy.deepcopy(Qs_za_racunanje[var_func])[0]
+                                alpha_tmp[funkcije][1] += copy.deepcopy(Qs_za_racunanje[var_func])[1]
+                #pprint.pprint(Qs_za_racunanje)
                 for funkcije in alpha_tmp:
-                    temp_0 = round(- alpha_tmp[funkcije][0] / len(self.N[funkcije]), 2)
-                    temp_1 = round(- alpha_tmp[funkcije][1] / len(self.N[funkcije]), 2)
+                    temp_0 = round(- alpha_tmp[funkcije][0] / len(self.N[funkcije]), 5)
+                    temp_1 = round(- alpha_tmp[funkcije][1] / len(self.N[funkcije]), 5)
                     temp_list = [temp_0, temp_1]
                     alpha[funkcije] = temp_list
-                print('\nalpha=')
-                pprint.pprint(alpha)
+                #print('\nalpha=')
+                #pprint.pprint(alpha)
                 for funkcija in self.gamma:
                     varijable_kojima_saljemo = self.N[funkcija]
                     for varijabla in varijable_kojima_saljemo:
@@ -96,9 +95,9 @@ class main_hub(object):
                         Rs['{}, {}'.format(funkcija, varijabla)] = [round(num, 2) for num in msg.data]
                         self.received[varijabla].clear()
                         self.pubs[varijabla].publish(msg)
-                print('Rs=')
-                pprint.pprint(Rs)
-                print('\n')
+                #print('Rs=')
+                #pprint.pprint(Rs)
+                #print('\n')
     def calc_U(self, f):
         xor_sum = []
         U = []
@@ -141,7 +140,7 @@ class main_hub(object):
     def Poruka_f_v(self, v, f, qs, alpha):
         sum_Qs = {}
         for i in qs:
-            temp = [round(num, 2) for num in qs[i]]
+            temp = [round(num, 5) for num in qs[i]]
             qs[i] = temp
         for varijabla in self.N[f]:
             if varijabla != v:
@@ -159,18 +158,15 @@ class main_hub(object):
                     del temp[0] ## --
             for varijabla in sum_Qs:
                 if temp[N.index(varijabla)] == 0:
-                    U[i1] += round(sum_Qs[varijabla][0] + alpha[f][0], 2)
+                    U[i1] += round(sum_Qs[varijabla][0] + alpha[f][0], 5)
                 else:
-                    U[i1] += round(sum_Qs[varijabla][1] + alpha[f][1], 2)
+                    U[i1] += round(sum_Qs[varijabla][1] + alpha[f][1], 5)
             #print(U)
             if temp[N.index(v)] == 0: ## razvrstavanje vrijednosti funkcije U na dvije liste, u jednu idu vrijednosti za koje varijabla kojoj saljem poruku ima vrijednost 0, a u drugu za vrijednosti 1
                 U_0.append(U[i1])
             elif temp[N.index(v)] == 1:
                 U_1.append(U[i1])   
             i1 = i1 + 1
-        # if f == 'funkcija2' or f == 'funkcija3':
-        #     print('R{}_{} = '.format(f, v), U)
-        #     print('sum_qs=',sum_Qs)
         output[0] += max(U_0)   
         output[1] += max(U_1)  
         return output

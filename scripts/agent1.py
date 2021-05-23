@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import rospy
+import copy
 from task_allocation.msg import poruka
 
 class agent1(object):
@@ -18,14 +19,15 @@ class agent1(object):
         if data.posiljatelj not in self.ready_check:
             self.ready_check.append(data.posiljatelj)
         if set(self.M) <= set(self.ready_check):
+            R = copy.deepcopy(self.Rs)
             for funkcija_kojim_saljemo in self.M:
                 poruka_funkciji = poruka()
                 poruka_funkciji.posiljatelj = 'varijabla1'
                 poruka_funkciji.primatelj = funkcija_kojim_saljemo
                 poruka_funkciji.data = self.Poruka_v_f(funkcija_kojim_saljemo)
                 self.pub.publish(poruka_funkciji)
-                Z = self.calc_Z()
-            #print("Z od agenta1 =",Z)
+                Z = self.calc_Z(R)
+            print("Z od agenta1 =",Z)
             
     def Poruka_v_f(self, f):
         if f in self.M:
@@ -36,11 +38,11 @@ class agent1(object):
                     out[1] += vrijednost[1]
         return out
 
-    def calc_Z(self):
+    def calc_Z(self, R):
         sum = [0, 0]
-        for func in self.Rs:
-            sum[0] += self.Rs[func][0]
-            sum[1] += self.Rs[func][1]
+        for func in R:
+            sum[0] += R[func][0]
+            sum[1] += R[func][1]
         return sum
 
 if __name__ == "__main__":

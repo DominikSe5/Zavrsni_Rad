@@ -66,8 +66,6 @@ class main_hub(object):
                     temp = list(Qs_za_racunanje[i])
                     temp_1 = [round(num, 5) for num in temp] ## round-anje
                     Qs_za_racunanje[i] = temp_1
-                #print('Qs=')
-                #pprint.pprint(Qs_za_racunanje)
                 for var_func in Qs_za_racunanje:
                     for funkcije in self.N:
                         if funkcije in var_func:
@@ -77,14 +75,11 @@ class main_hub(object):
                             else:
                                 alpha_tmp[funkcije][0] += copy.deepcopy(Qs_za_racunanje[var_func])[0]
                                 alpha_tmp[funkcije][1] += copy.deepcopy(Qs_za_racunanje[var_func])[1]
-                #pprint.pprint(Qs_za_racunanje)
                 for funkcije in alpha_tmp:
                     temp_0 = round(- alpha_tmp[funkcije][0] / len(self.N[funkcije]), 5)
                     temp_1 = round(- alpha_tmp[funkcije][1] / len(self.N[funkcije]), 5)
                     temp_list = [temp_0, temp_1]
                     alpha[funkcije] = temp_list
-                #print('\nalpha=')
-                #pprint.pprint(alpha)
                 for funkcija in self.gamma:
                     varijable_kojima_saljemo = self.N[funkcija]
                     for varijabla in varijable_kojima_saljemo:
@@ -95,9 +90,7 @@ class main_hub(object):
                         Rs['{}, {}'.format(funkcija, varijabla)] = [round(num, 2) for num in msg.data]
                         self.received[varijabla].clear()
                         self.pubs[varijabla].publish(msg)
-                #print('Rs=')
-                #pprint.pprint(Rs)
-                #print('\n')
+                        
     def calc_U(self, f):
         xor_sum = []
         U = []

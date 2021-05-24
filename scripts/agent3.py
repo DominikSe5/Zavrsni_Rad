@@ -6,6 +6,8 @@ from task_allocation.msg import poruka
 
 class agent3(object):
     def __init__(self):
+        self.cycle_limit = 25
+        self.convergence_check = []
         self.M = ['funkcija2', 'funkcija3']
         self.ready_check = []
         self.gamma = [-0.1, 0.1]
@@ -26,8 +28,23 @@ class agent3(object):
                 poruka_funkciji.primatelj = funkcija_kojim_saljemo
                 poruka_funkciji.data = self.Poruka_v_f(funkcija_kojim_saljemo)
                 self.pub.publish(poruka_funkciji)
-                Z = self.calc_Z(R)
-            print("Z od agenta3 =",Z)
+            Z = self.calc_Z(R)
+            self.convergence_func(Z)
+            self.ready_check.clear()
+
+    def convergence_func(self, Z):
+        self.cycle_limit += -1
+        if Z[0] >= Z[1]:
+            self.convergence_check.append(0)
+        else:
+            self.convergence_check.append(1)
+        if len(self.convergence_check) > 5:
+            temp = self.convergence_check[1:]
+            self.convergence_check = temp
+        print('Z3 =',Z)
+        if self.cycle_limit == 0 or (self.cycle_limit < 15 and len(self.convergence_check) == 5 and all(x == self.convergence_check[0] for x in self.convergence_check)):
+            print('Agent 3 se odlucio za stanje {}'.format(self.convergence_check[-1]))
+            rospy.signal_shutdown('Kraj')
 
     def Poruka_v_f(self, f):
         if f in self.M:
@@ -46,7 +63,7 @@ class agent3(object):
         return sum
 
 if __name__ == "__main__":
-    rospy.init_node("agent3")
+    rospy.init_node("agent3", disable_signals=True)
     try:
         node = agent3()
     except rospy.ROSInterruptException:

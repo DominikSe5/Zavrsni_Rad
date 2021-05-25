@@ -51,6 +51,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
   FILES
   poruka.msg
+  poruka_v1.msg
 #   Message1.msg
 #   Message2.msg
  )

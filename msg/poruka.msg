@@ -1,3 +1,3 @@
-string posiljatelj
-string primatelj
-float32[] data
+string sender
+string reciver
+float32 data

@@ -8,11 +8,12 @@ import yaml
 
 class test(object):
     def __init__(self):
-        stream = open("data.yaml", 'r')
-        x = yaml.load(stream, Loader=yaml.FullLoader)
-        agents = x['agents']
-        for agent in agents:
-            print(agents[agent]['speed'])
+        sub = rospy.Subscriber('/varijabla_funkciji', poruka, self.callback)
+        rospy.spin()
+
+    def callback(self, data):
+        print(data.data)
+
         
         
 

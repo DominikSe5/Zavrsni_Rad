@@ -4,70 +4,86 @@ from networkx.algorithms.reciprocity import reciprocity
 from networkx.classes.graph import Graph
 import rospy
 import copy
-from task_allocation.msg import poruka_v1
+from task_allocation.msg import poruka
 import networkx as nx
+import yaml
 
 
 class main_hub(object):
     
     def __init__(self):
+
         self.pr_graph = nx.DiGraph()
         self.create_pr_graph() ## Precedence graph
-        self.factor_graph = nx.Graph()
-        self.create_fc_graph() ## Factor graph
-
         self.M = {}
+        agents_info = self.create_M() ## M(n) is "set of indices of all the function(task) nodes connected to variable node xn in the factor graph"
 
         self.received = {}
-        self.tasks = []
-
-        #sub = rospy.Subscriber('/agent_funkciji', poruka, self.callback)
+        self.tasks_in_current_layer = []
 
         rospy.sleep(4)
         
+        self.Qs = {}
+
         Qs_za_racunanje = {}
         cycle = 1
 
+
         while not rospy.is_shutdown():
+            sub = rospy.Subscriber('/agent_funkciji', poruka, self.callback)
+            rospy.sleep(1)
             check = []
-            for task in self.pr_graph.nodes: ## stvaranje liste zadataka u sadasnjem sloju 
-                if len(list(self.pr_graph.predecessors(task))) == 0:
-                    self.tasks.append(task)
+            alpha = {}
+            alpha_tmp = {}
+            for task in self.pr_graph.nodes():
+                if list(self.pr_graph.predecessors(task)) == []:
+                    self.tasks_in_current_layer.append(task) ## dodavanje svih task-ova koji nemaju order restriction u listu s kojom radimo
 
-            for agent in self.factor_graph.nodes:
-                for task in self.tasks:
-                    if task in list(self.factor_graph.adj[agent]):
-                        if agent not in self.received: ## inicijalizacija dict, prvo upisivanje key, value
-                            self.received[agent] = [task] 
-                        elif agent in self.received and task not in self.received[agent]:
-                            self.received[agent].append(task)## 1 - postavljanje recived zastaica za prvi prolazak kroz algoritam
-
-            self.M = copy.deepcopy(self.received) ## M(n) is "set of indices of all the function(task) nodes 
-                                                  ## connected to variable node xi in the factor graph"
             for agent in self.received:
-                if set(self.M[agent]) <= set(self.received[agent]):
+                if set(self.tasks_in_current_layer) <= set(self.received[agent]):
                     check.append(True)
-            print(check)
-            
-            if all(check) and len(check) == len(list(self.M.keys())):
-                self.pubs = {}
-                for agent in self.received:
-                    self.pubs[agent] = rospy.Publisher('/{}/task_varijabli'.format(agent), poruka_v1, queue_size=8, latch=True)
-                for task in self.tasks:
-                    agenti_kojima_saljemo = list(self.received.keys())
-                    for agent in agenti_kojima_saljemo:
-                        msg = poruka_v1()
-                        msg.primatelj = agent                       
-                        msg.posiljatelj = task
-                        msg.data = self.Poruka_f_v(task, agent)
-                        # Rs['{}, {}'.format(funkcija, varijabla)] = [round(num, 2) for num in msg.data]
-                        # self.received[varijabla].clear()
-                        # self.pubs[varijabla].publish(msg)
+            if all(check) and len(check) == len(list(self.received.keys())):
+                Qs_za_racunanje = copy.deepcopy(self.Qs) 
+                for task in self.tasks_in_current_layer:
+                    for agent_func in self.Qs:
+                        keys = alpha_tmp.keys()
+                        if task in agent_func:
+                            if task not in keys:
+                                alpha_tmp[task] = copy.deepcopy(Qs_za_racunanje[agent_func])
+                            else:
+                                alpha_tmp[task] += copy.deepcopy(Qs_za_racunanje[agent_func])
+            print("Alpha", alpha_tmp)
+            print(Qs_za_racunanje,"\n")
+            alpha_tmp.clear()
 
 
 
             
-            
+            #if True:#all(check) and len(check) == len(list(self.M.keys())):
+                # self.pubs = {}
+                # for agent in self.received:
+                #     self.pubs[agent] = rospy.Publisher('/{}/task_varijabli'.format(agent), poruka, queue_size=8, latch=True)
+                # for task in self.tasks:
+                #     agenti_kojima_saljemo = list(self.received.keys())
+                #     for agent in agenti_kojima_saljemo:
+                #         msg = poruka()
+                #         msg.reciver = agent                       
+                #         msg.sender = task
+                #         msg.data = self.Poruka_f_v(task, agent)
+                #         # Rs['{}, {}'.format(funkcija, varijabla)] = [round(num, 2) for num in msg.data]
+                #         # self.received[varijabla].clear()
+                #         # self.pubs[varijabla].publish(msg)
+
+
+
+    def callback(self, data):
+        self.Qs['{}, {}'.format(data.sender, data.reciver)] = data.data
+        if data.sender in self.received:
+            if data.reciver not in self.received[data.sender]:
+                self.received[data.sender].append(data.reciver)
+        else:
+            self.received[data.sender] = [data.reciver]
+
     def Poruka_f_v(self, task, agent):
         finish_time = 0
         stl = self.factor_graph.nodes[agent]['stl']
@@ -79,56 +95,28 @@ class main_hub(object):
         finish_time += self.pr_graph.nodes[task]['duration']
         return finish_time
 
-
-
-
     def create_pr_graph(self):
-        self.pr_graph.add_nodes_from([
-            ('task1', {'layer': 1, 'travel_time': 2, 'duration': 5}),
-            ('task2', {'layer': 1, 'travel_time': 4, 'duration': 3}),
-            ('task3', {'layer': 1, 'travel_time': 2, 'duration': 5}),
-            ('task4', {'layer': 2, 'travel_time': 6, 'duration': 1}),
-            ('task5', {'layer': 2, 'travel_time': 3, 'duration': 2}),
-            ('task6', {'layer': 2, 'travel_time': 1, 'duration': 5}),
-            ('task7', {'layer': 3, 'travel_time': 5, 'duration': 2}),
-            ('task8', {'layer': 3, 'travel_time': 6, 'duration': 3})
-            ])
-        self.pr_graph.add_edges_from([
-            ('task1', 'task4'), ('task1', 'task5'),
-            ('task2', 'task5'),
-            ('task3', 'task6'),
-            ('task4', 'task7'),
-            ('task5', 'task8'),
-            ('task6', 'task8')
-            ])
+        stream = open("data.yaml", 'r')
+        dict = yaml.load(stream, Loader=yaml.FullLoader)
+        tasks = dict['tasks']
+        while list(self.pr_graph.nodes()) != list(tasks.keys()):
+            for task in tasks:
+                self.pr_graph.add_node(task)
+                for predecessor in tasks[task]['ordering_constraint']:
+                    self.pr_graph.add_edge(predecessor, task)
+        for task in self.pr_graph.nodes():
+            self.pr_graph.nodes[task]['duration'] = tasks[task]['duration']
+            self.pr_graph.nodes[task]['location'] = tasks[task]['location']
 
-    def create_fc_graph(self):
-        self.factor_graph.add_nodes_from([
-            ('agent1', {'stl': nx.Graph()}),
-            ('agent2', {'stl': nx.Graph()}),
-            ('agent3', {'stl': nx.Graph()}),
-            ('agent4', {'stl': nx.Graph()}),
-            'task1', 'task2', 'task3', 'task4', 'task5', 'task6', 'task7', 'task8'
-            ])
-        self.factor_graph.add_edges_from([
-            ('agent1', 'task1'),
-            ('agent1', 'task3'),
-            ('agent1', 'task6'),
-            ('agent1', 'task7'),
-            ('agent2', 'task1'),
-            ('agent2', 'task2'),
-            ('agent2', 'task4'),
-            ('agent2', 'task5'),
-            ('agent2', 'task6'),
-            ('agent2', 'task7'),
-            ('agent2', 'task8'),
-            ('agent3', 'task2'),
-            ('agent3', 'task5'),
-            ('agent3', 'task8'),
-            ('agent4', 'task2'),
-            ('agent4', 'task6'),
-            ('agent4', 'task7')
-            ])
+    def create_M(self):
+        stream = open("data.yaml", 'r')
+        dict = yaml.load(stream, Loader=yaml.FullLoader)
+        agents = dict['agents']
+        agents_info = {}
+        for agent in agents:
+            self.M[agent] = agents[agent]['resources']
+            agents_info[agent] = [agents[agent]['speed'], agents[agent]['location']]
+        return agents_info
 
 if __name__ == "__main__":
     rospy.init_node("Main_Hub")

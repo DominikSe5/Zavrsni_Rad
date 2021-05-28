@@ -52,6 +52,8 @@ add_message_files(
   FILES
   poruka.msg
   poruka_v1.msg
+  KeyValueString.msg
+  MSmessage.msg
 #   Message1.msg
 #   Message2.msg
  )

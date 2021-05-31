@@ -1,2 +1,2 @@
 string key
-float32 values
+float32 value

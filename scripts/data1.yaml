@@ -1,0 +1,26 @@
+agents:
+  agent1:
+    speed: 4.2
+    location: [5.0, 5.0]
+    resources: ['task1', 'task2', 'task3']
+  agent2:
+    speed: 4.7
+    location: [35.0, 60.0]
+    resources: ['task1', 'task2', 'task3']
+
+
+
+tasks:
+  task1:
+    duration: 3
+    location: [7.0, 4.0]
+    ordering_constraint: []
+  task2:
+    duration: 15
+    location: [37.0, 65.0]
+    ordering_constraint: []
+  task3:
+    duration: 5.9
+    location: [80.0, 45.0]
+    ordering_constraint: ['task2']
+                

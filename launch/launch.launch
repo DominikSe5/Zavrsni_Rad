@@ -1,7 +1,5 @@
 <launch>
-	<node pkg="task_allocation" type="gl_funkcija.py" name="main_hub" output="screen"/>
-	<node pkg="task_allocation" type="agent1.py" name="agent1" output="screen"/>
-	<node pkg="task_allocation" type="agent2.py" name="agent2" output="screen"/>
-	<node pkg="task_allocation" type="agent3.py" name="agent3" output="screen"/>
+	<node pkg="task_allocation" type="functions.py" name="main_hub" output="screen"/>
+	<node pkg="task_allocation" type="agents.py" name="agents" output="screen"/>
 </launch>
 

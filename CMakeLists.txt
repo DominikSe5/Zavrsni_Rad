@@ -53,7 +53,9 @@ add_message_files(
   poruka.msg
   poruka_v1.msg
   KeyValueString.msg
-  MSmessage.msg
+  MSQmessage.msg
+  MSRmessage.msg
+  CheckForNewLayer.msg
 #   Message1.msg
 #   Message2.msg
  )

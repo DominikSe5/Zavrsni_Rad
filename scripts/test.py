@@ -10,7 +10,9 @@ import yaml
 class test(object):
     def __init__(self):
         pub = rospy.Publisher('/varijabla_funkciji', MSmessage, queue_size=5)
+        sub = rospy.Subscriber('/varijabla_funkciji', MSmessage, self.callback)
         while not rospy.is_shutdown():
+            rospy.sleep(1)
             d = {'prvi': 1, 'drugi': 2, 'treci': 3}
             nova_poruka = MSmessage()
             nova_poruka.sender = 'netko'
@@ -18,10 +20,12 @@ class test(object):
             for key, value in d.items():
                 ros_dict = KeyValueString(key, value)
                 nova_poruka.dict.append(ros_dict)
-                print(nova_poruka)
             pub.publish(nova_poruka)
 
-        
+    def callback(self, data):
+        dict = data.dict
+        for i in dict:
+            print(i.key)
         
 
 if __name__ == "__main__":

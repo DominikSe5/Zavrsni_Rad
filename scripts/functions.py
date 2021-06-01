@@ -21,7 +21,7 @@ class main_hub(object):
         self.agents_info = self.create_agents_info() ## M(n) is "set of indices of all the function(task) nodes connected to variable node xn in the factor graph"
 
         self.received = {}
-        tasks_in_current_layer = []
+        
 
         rospy.sleep(4)
         
@@ -36,26 +36,28 @@ class main_hub(object):
 
 
         while not rospy.is_shutdown():
-            rospy.sleep(2)
+            rospy.sleep(1)
+
+            tasks_in_current_layer = []
             check = []
             alpha = {}
             alpha_tmp = {}
             n = 0
+
+            pr_graph = copy.deepcopy(self.pr_graph)
+            for task in pr_graph.nodes():
+                if list(pr_graph.predecessors(task)) == []:
+                    if task not in tasks_in_current_layer:
+                        tasks_in_current_layer.append(task)
+
             for agent in self.received:
                 if set(tasks_in_current_layer) <= set(self.received[agent]): ## moguci problemi
                     check.append(True)
             
-            print(check)
+            print("R checks", check)
 
             if all(check) and len(check) == len(list(self.received.keys())) and len(check) != 0:
-                pr_graph = copy.deepcopy(self.pr_graph)
-                print("nodes", pr_graph.nodes())
-                for task in pr_graph.nodes():
-                    if list(pr_graph.predecessors(task)) == []:
-                        if task not in tasks_in_current_layer:
-                            tasks_in_current_layer.append(task)
-                print("tasks_curretn_layer", tasks_in_current_layer)
-
+                
                 Qs_za_racunanje = copy.deepcopy(self.Qs)                                             
                 agenti_kojima_saljemo = {}                                                                      
                 for agent in self.M:
@@ -84,6 +86,7 @@ class main_hub(object):
             self.pr_graph.remove_node(task)
             for agent in self.M:
                 self.M[agent].remove(task)
+        self.received.clear()
 
 
     def callback(self, data):

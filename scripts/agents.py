@@ -6,6 +6,7 @@ from networkx.classes.graph import Graph
 import rospy
 import copy
 from task_allocation.msg import MSQmessage, MSRmessage, KeyValueString, CheckForNewLayer
+from std_msgs.msg import String
 import networkx as nx
 import yaml
 import matplotlib.pyplot as plt
@@ -27,19 +28,19 @@ class agents(object):
         
         self.Rs = {}
         self.received = {}
-        self.tasks_in_current_layer = []
         
         self.cycle_limiter = {}
-        self.task_distribution = {}
 
         while not rospy.is_shutdown():
+
             pr_graph = copy.deepcopy(self.pr_graph)
             check = []
-
+            tasks_in_current_layer = []
+            task_distribution = {}
             for task in pr_graph.nodes():
-                if list(pr_graph.predecessors(task)) == []:
-                    if task not in self.tasks_in_current_layer:
-                        self.tasks_in_current_layer.append(task) 
+                if len(list(pr_graph.predecessors(task))) == 0:
+                    if task not in tasks_in_current_layer:
+                        tasks_in_current_layer.append(task) 
 
             if not self.working:
                 for agent in self.M:
@@ -67,20 +68,26 @@ class agents(object):
                             msg.receiver = task
                             pub.publish(msg)
             if self.working:
+                
                 received = copy.deepcopy(self.received)
                 for agent in received:
-                    if set(self.tasks_in_current_layer) <= set(received[agent]):
+                    if set(tasks_in_current_layer) <= set(received[agent]):
                         check.append(True)
-                #print(received)
-                #print(check)
+                
+                if check:
+                    print("Q checks", check)
+
                 if all(check) and len(check) == len(list(received.keys())) and len(check) != 0:
+                    rs = copy.deepcopy(self.Rs)
                     temp_dict = {}
                     for agent in received:
-                        for task in self.tasks_in_current_layer:
-                            for func_agent in self.Rs:
+                        for task in tasks_in_current_layer:
+                            if len(tasks_in_current_layer) == 1:
+                                temp_dict[task] = 0
+                            for func_agent in rs:
                                 if task not in func_agent:
                                     if agent in func_agent:
-                                        temp_dict[task] = self.Rs[func_agent]
+                                        temp_dict[task] = rs[func_agent]
                             msg = MSQmessage()
                             msg.sender = agent
                             msg.receiver = task
@@ -98,64 +105,88 @@ class agents(object):
                             pub.publish(msg)
                         
                         if agent not in self.cycle_limiter:
-                            self.cycle_limiter[agent] = [self.cal_Z(agent)]
+                            self.cycle_limiter[agent] = [self.cal_Z(agent, tasks_in_current_layer)]
                         else:
-                            self.cycle_limiter[agent].append(self.cal_Z(agent))
+                            self.cycle_limiter[agent].append(self.cal_Z(agent, tasks_in_current_layer))
                         if len(self.cycle_limiter[agent]) > 3:
                             temp = self.cycle_limiter[agent][1:]
                             self.cycle_limiter[agent] = temp
-                       
+                        print(self.cycle_limiter)
+
                         if all(x == self.cycle_limiter[agent][0] for x in self.cycle_limiter[agent]) and len(self.cycle_limiter[agent]) == 3:
                             print("{} se odlucio za zadatak {}".format(agent, self.cycle_limiter[agent][0]))
-                            self.task_distribution[agent] = self.cycle_limiter[agent][0]
-                                                
-                        if set(received) == set(self.task_distribution):
-                            for agent in self.task_distribution:
+                            task_distribution[agent] = self.cycle_limiter[agent][0]
+              
+                        if set(received) == set(task_distribution):
+                            self.received.clear()
+                            self.Rs.clear()
+                            print("rjesen layer")
+                            for agent in task_distribution:
                                 stl = self.agents_info[agent][2]
                                 if len(stl.edges()) == 0:
-                                    stl.add_edge('start', '{}_start'.format(self.task_distribution[agent]))
-                                    stl.add_edge('{}_start'.format(self.task_distribution[agent]), '{}_finish'.format(self.task_distribution[agent]))
+                                    stl.add_edge('start', '{}_start'.format(task_distribution[agent]))
+                                    stl.add_edge('{}_start'.format(task_distribution[agent]), '{}_finish'.format(task_distribution[agent]))
 
                                     location = self.agents_info[agent][1]
                                     speed = self.agents_info[agent][0]
-                                    p1 = pr_graph.nodes[self.task_distribution[agent]]['location']
+                                    p1 = pr_graph.nodes[task_distribution[agent]]['location']
                                     p2 = location 
                                     distance = math.sqrt( ((p1[0]-p2[0])**2)+((p1[1]-p2[1])**2) )
                                     travel_time = distance / speed
 
-                                    stl['start']['{}_start'.format(self.task_distribution[agent])]['duration'] = travel_time
-                                    stl['{}_start'.format(self.task_distribution[agent])]['{}_finish'.format(self.task_distribution[agent])]['duration'] = self.pr_graph.nodes[self.task_distribution[agent]]['duration']
+                                    stl['start']['{}_start'.format(task_distribution[agent])]['duration'] = travel_time
+                                    stl['{}_start'.format(task_distribution[agent])]['{}_finish'.format(task_distribution[agent])]['duration'] = self.pr_graph.nodes[task_distribution[agent]]['duration']
                                 else:
-                                    stl.add_edge(list(list(stl.edges())[-1])[1], '{}_start'.format(self.task_distribution[agent]))
-                                    stl.add_edge('{}_start'.format(self.task_distribution[agent]), '{}_finish'.format(self.task_distribution[agent]))
+                                    stl.add_edge(list(list(stl.edges())[-1])[1], '{}_start'.format(task_distribution[agent]))
+                                    stl.add_edge('{}_start'.format(task_distribution[agent]), '{}_finish'.format(task_distribution[agent]))
 
                                     location = self.agents_info[agent][1]
                                     speed = self.agents_info[agent][0]
-                                    p1 = pr_graph.nodes[self.task_distribution[agent]]['location']
+                                    p1 = pr_graph.nodes[task_distribution[agent]]['location']
                                     p2 = location 
                                     distance = math.sqrt( ((p1[0]-p2[0])**2)+((p1[1]-p2[1])**2) )
                                     travel_time = distance / speed
 
-                                    stl[list(list(stl.edges())[-1])[1]]['{}_0'.format(self.task_distribution[agent])]['duration'] = travel_time
-                                    stl['{}_0'.format(self.task_distribution[agent])]['{}_1'.format(self.task_distribution[agent])]['duration'] = self.pr_graph.nodes[self.task_distribution[agent]]['duration']
+                                    stl[list(list(stl.edges())[-2])[0]][list(list(stl.edges())[-2])[1]]['duration'] = travel_time
+                                    stl['{}_start'.format(task_distribution[agent])]['{}_finish'.format(task_distribution[agent])]['duration'] = self.pr_graph.nodes[task_distribution[agent]]['duration']
                                 
-                                self.agents_info[agent][1] = pr_graph.nodes[self.task_distribution[agent]]['location']
+                                
+                                self.agents_info[agent][1] = pr_graph.nodes[task_distribution[agent]]['location']
+                                
+                                for agent1 in task_distribution:
+                                    if len(self.M[agent]) != 0:
+                                        self.M[agent].remove(task_distribution[agent1])
 
-                                self.pr_graph.remove_node(self.task_distribution[agent])
-                                for agent1 in self.task_distribution:
-                                    self.M[agent].remove(self.task_distribution[agent1])
-
-                                self.working = False
-                                print(stl.edges())
+                                
+                            
+                            self.working = False
+                            
+                            
 
                             newLayerMsg = CheckForNewLayer()
-                            for agent1 in self.task_distribution:
-                                newLayerMsg.distributedTasks.append(self.task_distribution[agent1])
+                            
+                            for agent1 in task_distribution:
+                                if len(list(self.pr_graph.nodes())) != 0:
+                                    self.pr_graph.remove_node(task_distribution[agent1])
+                                    newLayerMsg.distributedTasks.append(task_distribution[agent1])
                             pub1.publish(newLayerMsg)
 
+                            if len(list(self.pr_graph.nodes())) == 0:
+                                for agent in self.M:
+                                    g = self.agents_info[agent][2]            
+                                    pos=nx.spring_layout(g) # positions for all nodes
+                                    nx.draw_networkx_labels(g,pos,font_size=20,font_family='sans-serif')
+                                    nx.draw(g,pos)
+                                    
+                                    plt.title("Raspored od {}".format(agent))
+                                    plt.show()
+
+                                rospy.signal_shutdown('Kraj')
+                            
 
 
-    def cal_Z(self, agent):
+
+    def cal_Z(self, agent, tasks_in_current_layer):
         rs_for_agent = {}
         for func_agent in self.Rs:
             if agent in func_agent:
@@ -164,11 +195,12 @@ class agents(object):
         for key, value in rs_for_agent.items():
             if value == minimum:
                 decided_task = key
-        for task in self.tasks_in_current_layer:
+        for task in tasks_in_current_layer:
             if task in decided_task:
                 return task
     
     def callback(self, data):
+        print("R poruka", data.sender, data.receiver, data.data)
         self.Rs["{}, {}".format(data.sender, data.receiver)] = data.data
         if data.receiver in self.received:
             if data.sender not in self.received[data.receiver]:
@@ -176,7 +208,6 @@ class agents(object):
         else:
             self.received[data.receiver] = [data.sender]
         self.working = True
-        #print(self.received)
 
     def create_pr_graph(self):
         stream = open("/home/dominik/catkin_ws/src/task_allocation/scripts/data1.yaml", 'r')

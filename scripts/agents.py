@@ -111,7 +111,7 @@ class agents(object):
                         if len(self.cycle_limiter[agent]) > 3:
                             temp = self.cycle_limiter[agent][1:]
                             self.cycle_limiter[agent] = temp
-                        print(self.cycle_limiter)
+                        print("Odluke: ",self.cycle_limiter)
 
                         if all(x == self.cycle_limiter[agent][0] for x in self.cycle_limiter[agent]) and len(self.cycle_limiter[agent]) == 3:
                             print("{} se odlucio za zadatak {}".format(agent, self.cycle_limiter[agent][0]))

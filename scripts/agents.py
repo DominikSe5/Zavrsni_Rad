@@ -171,15 +171,17 @@ class agents(object):
                                     newLayerMsg.distributedTasks.append(task_distribution[agent1])
                             pub1.publish(newLayerMsg)
 
-                            if len(list(self.pr_graph.nodes())) == 0:
+                            if len(list(self.pr_graph.nodes())) == 0:  ### zavrseno stvaranje rasporeda
                                 for agent in self.M:
-                                    g = self.agents_info[agent][2]            
-                                    pos=nx.spring_layout(g) # positions for all nodes
-                                    nx.draw_networkx_labels(g,pos,font_size=20,font_family='sans-serif')
-                                    nx.draw(g,pos)
+                                    g = self.agents_info[agent][2]       
+                                    for edge in g.edges():
+                                        print(edge, g[edge[0]][edge[1]]['duration'])     
+                                    # pos=nx.spring_layout(g) 
+                                    # nx.draw_networkx_labels(g,pos,font_size=20,font_family='sans-serif')
+                                    # nx.draw(g,pos)
                                     
-                                    plt.title("Raspored od {}".format(agent))
-                                    plt.show()
+                                    # plt.title("Raspored od {}".format(agent))
+                                    # plt.show()
 
                                 rospy.signal_shutdown('Kraj')
                             

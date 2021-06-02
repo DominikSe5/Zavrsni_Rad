@@ -118,9 +118,16 @@ class agents(object):
                             task_distribution[agent] = self.cycle_limiter[agent][0]
               
                         if set(received) == set(task_distribution):
+                            print(task_distribution, received)
+                            n = {}
                             self.received.clear()
                             self.Rs.clear()
                             print("rjesen layer")
+                            for agent in task_distribution:
+                                if task_distribution[agent] not in n:
+                                    n[task_distribution[agent]] = 1
+                                else:
+                                    n[task_distribution[agent]] += 1
                             for agent in task_distribution:
                                 stl = self.agents_info[agent][2]
                                 if len(stl.edges()) == 0:
@@ -135,7 +142,7 @@ class agents(object):
                                     travel_time = distance / speed
 
                                     stl['start']['{}_start'.format(task_distribution[agent])]['duration'] = travel_time
-                                    stl['{}_start'.format(task_distribution[agent])]['{}_finish'.format(task_distribution[agent])]['duration'] = self.pr_graph.nodes[task_distribution[agent]]['duration']
+                                    stl['{}_start'.format(task_distribution[agent])]['{}_finish'.format(task_distribution[agent])]['duration'] = self.pr_graph.nodes[task_distribution[agent]]['duration'] / n[task_distribution[agent]]
                                 else:
                                     stl.add_edge(list(list(stl.edges())[-1])[1], '{}_start'.format(task_distribution[agent]))
                                     stl.add_edge('{}_start'.format(task_distribution[agent]), '{}_finish'.format(task_distribution[agent]))
@@ -148,13 +155,13 @@ class agents(object):
                                     travel_time = distance / speed
 
                                     stl[list(list(stl.edges())[-2])[0]][list(list(stl.edges())[-2])[1]]['duration'] = travel_time
-                                    stl['{}_start'.format(task_distribution[agent])]['{}_finish'.format(task_distribution[agent])]['duration'] = self.pr_graph.nodes[task_distribution[agent]]['duration']
+                                    stl['{}_start'.format(task_distribution[agent])]['{}_finish'.format(task_distribution[agent])]['duration'] = self.pr_graph.nodes[task_distribution[agent]]['duration'] / n[task_distribution[agent]]
                                 
                                 
                                 self.agents_info[agent][1] = pr_graph.nodes[task_distribution[agent]]['location']
                                 
                                 for agent1 in task_distribution:
-                                    if len(self.M[agent]) != 0:
+                                    if len(self.M[agent]) != 0 and task_distribution[agent1] in self.M[agent]:
                                         self.M[agent].remove(task_distribution[agent1])
 
                                 
@@ -166,16 +173,18 @@ class agents(object):
                             newLayerMsg = CheckForNewLayer()
                             
                             for agent1 in task_distribution:
-                                if len(list(self.pr_graph.nodes())) != 0:
+                                if len(list(self.pr_graph.nodes())) != 0 and task_distribution[agent1] in self.pr_graph.nodes():
                                     self.pr_graph.remove_node(task_distribution[agent1])
                                     newLayerMsg.distributedTasks.append(task_distribution[agent1])
                             pub1.publish(newLayerMsg)
 
                             if len(list(self.pr_graph.nodes())) == 0:  ### zavrseno stvaranje rasporeda
                                 for agent in self.M:
-                                    g = self.agents_info[agent][2]       
+                                    g = self.agents_info[agent][2]      
+                                    current_time = 0 
                                     for edge in g.edges():
-                                        print(edge, g[edge[0]][edge[1]]['duration'])     
+                                        print(edge, "{} - {}".format(round(current_time, 2), round(current_time + g[edge[0]][edge[1]]['duration'], 2)))     
+                                        current_time += g[edge[0]][edge[1]]['duration'] 
                                     # pos=nx.spring_layout(g) 
                                     # nx.draw_networkx_labels(g,pos,font_size=20,font_family='sans-serif')
                                     # nx.draw(g,pos)

@@ -5,12 +5,13 @@ from networkx.algorithms.cycles import minimum_cycle_basis
 from networkx.classes.graph import Graph
 import rospy
 import copy
-from task_allocation.msg import MSQmessage, MSRmessage, KeyValueString, CheckForNewLayer
+from task_allocation.msg import MSQmessage, KeyValueString, CheckForNewLayer
 from std_msgs.msg import String
 import networkx as nx
 import yaml
 import matplotlib.pyplot as plt
 import math
+import pprint
 
 
 class agents(object):
@@ -23,7 +24,7 @@ class agents(object):
 
         pub = rospy.Publisher("/agent_funkciji", MSQmessage, queue_size = 8, latch=True)
         pub1 = rospy.Publisher("/newLayer", CheckForNewLayer, queue_size = 8, latch=True)
-        sub = rospy.Subscriber('/funkcija_agentu', MSRmessage, self.callback)
+        sub = rospy.Subscriber('/funkcija_agentu', MSQmessage, self.callback)
         self.working = False
         
         self.Rs = {}
@@ -44,7 +45,7 @@ class agents(object):
 
             if not self.working:
                 for agent in self.M:
-                    for task in self.M[agent]:
+                    for task in tasks_in_current_layer:
                         if list(pr_graph.predecessors(task)) == []:
                             msg = MSQmessage()
                             temp_dict = {}
@@ -54,7 +55,7 @@ class agents(object):
                             p2 = location 
                             distance = math.sqrt( ((p1[0]-p2[0])**2)+((p1[1]-p2[1])**2) )
                             travel_time = distance / speed
-                            for i in self.M[agent]:
+                            for i in tasks_in_current_layer:
                                 if task == i:
                                     temp_dict[i] = travel_time + pr_graph.nodes[task]['duration']
                                 else:
@@ -79,7 +80,7 @@ class agents(object):
 
                 if all(check) and len(check) == len(list(received.keys())) and len(check) != 0:
                     rs = copy.deepcopy(self.Rs)
-                    temp_dict = {}
+                    R_sum = {}
                     for agent in received:
                         for task in tasks_in_current_layer:
                             if len(tasks_in_current_layer) == 1:
@@ -87,17 +88,21 @@ class agents(object):
                             for func_agent in rs:
                                 if task not in func_agent:
                                     if agent in func_agent:
-                                        temp_dict[task] = rs[func_agent]
+                                        for dict in rs[func_agent]:
+                                            if key not in R_sum:
+                                                R_sum[dict.key] = dict.value
+                                            else:
+                                                R_sum[dict.key] += dict.value
                             msg = MSQmessage()
                             msg.sender = agent
                             msg.receiver = task
 
                             alpha_tmp = 0
-                            for i in temp_dict.values():
-                                alpha_tmp += i
-                            alpha = -alpha_tmp / len(temp_dict.values())
-
-                            for key, value in temp_dict.items():
+                            n = 0
+                            for key, value in R_sum.items():
+                                alpha_tmp += value
+                            alpha = - alpha_tmp / len(list(R_sum.keys()))
+                            for key, value in R_sum.items():
                                 poruka = value + alpha
                                 ros_dict = KeyValueString(key, poruka)
                                 msg.dict.append(ros_dict)
@@ -118,7 +123,6 @@ class agents(object):
                             task_distribution[agent] = self.cycle_limiter[agent][0]
               
                         if set(received) == set(task_distribution):
-                            print(task_distribution, received)
                             n = {}
                             self.received.clear()
                             self.Rs.clear()
@@ -199,11 +203,18 @@ class agents(object):
 
     def cal_Z(self, agent, tasks_in_current_layer):
         rs_for_agent = {}
+        sum_Rs = {}
         for func_agent in self.Rs:
             if agent in func_agent:
                 rs_for_agent[func_agent] = self.Rs[func_agent]
-        minimum = min(rs_for_agent.values())
-        for key, value in rs_for_agent.items():
+        for func_agent in rs_for_agent:
+            for dict in rs_for_agent[func_agent]:
+                if dict.key not in sum_Rs:
+                    sum_Rs[dict.key] = dict.value
+                else:
+                    sum_Rs[dict.key] += dict.value
+        minimum = min(sum_Rs.values())
+        for key, value in sum_Rs.items():
             if value == minimum:
                 decided_task = key
         for task in tasks_in_current_layer:
@@ -211,8 +222,7 @@ class agents(object):
                 return task
     
     def callback(self, data):
-        print("R poruka", data.sender, data.receiver, data.data)
-        self.Rs["{}, {}".format(data.sender, data.receiver)] = data.data
+        self.Rs["{}, {}".format(data.sender, data.receiver)] = data.dict
         if data.receiver in self.received:
             if data.sender not in self.received[data.receiver]:
                 self.received[data.receiver].append(data.sender)

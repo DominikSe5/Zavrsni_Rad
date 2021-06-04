@@ -6,7 +6,7 @@ agents:
   agent2:
     speed: 4.7
     location: [35.0, 60.0]
-    resources: ['task2', 'task5', 'task4', 'task1']
+    resources: ['task1', 'task2', 'task4', 'task5']
   agent3:
     speed: 5.2
     location: [80.0, 40.0]

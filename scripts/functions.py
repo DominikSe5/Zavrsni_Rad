@@ -80,7 +80,7 @@ class main_hub(object):
                 for task in tasks_in_current_layer:
 
                     f = self.f_of_task(task, agenti_kojima_saljemo[task], tasks_in_current_layer)
-                    print("\nFunkcija f za {} = {}".format(task, f))
+                    #print("\nFunkcija f za {} = {}".format(task, f))
                     for agent in agenti_kojima_saljemo[task]:
                         R = self.calc_R(f, agent, Qs_za_racunanje, agenti_kojima_saljemo[task], task, tasks_in_current_layer)
                         print("\nPoruka {}_{} = {}".format(task, agent, R))
@@ -98,8 +98,10 @@ class main_hub(object):
         for task in tasks:
             self.pr_graph.remove_node(task)
             for agent in self.M:
-                self.M[agent].remove(task)
+                if task in self.M[agent]:
+                    self.M[agent].remove(task)
         self.received.clear()
+        self.Qs.clear()
 
 
     def callback(self, data):
@@ -131,14 +133,10 @@ class main_hub(object):
                 index_counter = 0
                 for task_to_be_done_by_agents in element:
                     if index_counter != index_of_ag_primatelj:
-                        if element not in temp: ##moguci problemi
-                            for i in sum_Qs[Cj[index_counter]]:
-                                if i.key == task_to_be_done_by_agents:
-                                    temp[element] = f[element] + i.value
-                        else:
-                            for i in sum_Qs[Cj[index_counter]]:
-                                if i.key == task_to_be_done_by_agents:
-                                   temp[element] += i.value
+                        for i in sum_Qs[Cj[index_counter]]:
+                            if i.key == task_to_be_done_by_agents:
+                                temp[element] = f[element] + i.value
+                                
                     index_counter += 1
         for element in temp:
             

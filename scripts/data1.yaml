@@ -17,12 +17,13 @@ tasks:
     location: [7.0, 4.0]
     ordering_constraint: []
   task2:
-    duration: 15
+    duration: 25
     location: [37.0, 65.0]
     ordering_constraint: []
   task3:
     duration: 5.9
-    location: [80.0, 30.0]
-    ordering_constraint: ['task2'] 
+    location: [80.0, 45.0]
+    ordering_constraint: ['task1']
+
 
                 
